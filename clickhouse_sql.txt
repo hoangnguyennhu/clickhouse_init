@@ -1,3 +1,6 @@
+admin:03c620355a074e4f72f0523aec7a9dfa1968f1024baf6822007b7a89efc0e73a
+
+
 CREATE TABLE IF NOT EXISTS cti.mt_account_balance
 (
     Server String,
@@ -42,4 +45,81 @@ CREATE TABLE IF NOT EXISTS cti.mt_account_balance_table
     Storage Float64,
     Floating Float64,
     Commission Float64
-) ENGINE = MergeTree ORDER BY (Login, Server, Timestamp);
+) ENGINE = MergeTree ORDER BY (Login, Server, Timestamp)
+
+CREATE MATERIALIZED VIEW cti.mt_account_balance_mv TO cti.mt_account_balance_table AS
+SELECT *
+FROM cti.mt_account_balance
+
+CREATE TABLE IF NOT EXISTS cti.mt_deal
+(
+    Server String,
+    ExternalId UInt64,
+    Timestamp DateTime64(3),
+    OpenTime Nullable(DateTime64(3)),
+    Login UInt64,
+    Dealer UInt64,
+    Action UInt8,
+    Symbol String,
+    Digits UInt8,
+    DigitsCurrency UInt8,
+    Volume Float64,
+    OpenPrice Float64,
+    Reason UInt8,
+    Comment String,
+    Raw String,
+    OrderId UInt64,
+    OpenTradeId UInt64,
+    ClosePrice Float64,
+    CloseVolume Float64,
+    CloseTime DateTime64(3),
+    Entry UInt8,
+    Profit Float64,
+    ContractSize Float64,
+    Storage Float64,
+    Commission Float64,
+    Fee Float64
+)
+ENGINE = Kafka()
+SETTINGS
+kafka_broker_list = 'backbone-kafka-bootstrap.kafka.svc.cluster.local:9092',
+kafka_topic_list = 'cti.worker.mt_deal',
+kafka_group_name = 'cti.base.mt_deal',
+kafka_format = 'AvroConfluent',
+format_avro_schema_registry_url = 'http://schema-registry-service.kafka.svc.cluster.local:8081'
+
+CREATE TABLE IF NOT EXISTS cti.mt_deal_table
+(
+    Server String,
+    ExternalId UInt64,
+    Timestamp DateTime64(3),
+    OpenTime Nullable(DateTime64(3)),
+    Login UInt64,
+    Dealer UInt64,
+    Action UInt64,
+    Symbol String,
+    Digits UInt8,
+    DigitsCurrency UInt8,
+    Volume Float64,
+    OpenPrice Float64,
+    Reason UInt8,
+    Comment String,
+    Raw String,
+    OrderId UInt64,
+    OpenTradeId UInt64,
+    ClosePrice Float64,
+    CloseVolume Float64,
+    CloseTime DateTime64(3),
+    Entry UInt64,
+    Profit Float64,
+    ContractSize Float64,
+    Storage Float64,
+    Commission Float64,
+    Fee Float64
+) ENGINE = ReplacingMergeTree() 
+PARTITION BY Action
+ORDER BY (ExternalId, Login, Server)
+
+CREATE MATERIALIZED VIEW cti.mt_deal_mv TO cti.mt_deal_table AS
+SELECT *
+FROM cti.mt_deal;
