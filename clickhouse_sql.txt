@@ -1,0 +1,45 @@
+CREATE TABLE IF NOT EXISTS cti.mt_account_balance
+(
+    Server String,
+    Currency String,
+    Group String,
+    Timestamp DateTime64(3),
+    Login UInt64,
+    TotalBalance Float64,
+    Credit Float64,
+    Margin Float64,
+    Leverage UInt16,
+    Equity Float64,
+    MarginFree Float64,
+    MarginLevel Float64,
+    Storage Float64,
+    Floating Float64,
+    Commission Float64
+)
+ENGINE = Kafka()
+SETTINGS
+kafka_broker_list = 'backbone-kafka-bootstrap.kafka.svc.cluster.local:9092',
+kafka_topic_list = 'cti.worker.mt_account_balance',
+kafka_group_name = 'cti.base0.mt_account_balance',
+kafka_format = 'AvroConfluent',
+format_avro_schema_registry_url = 'http://schema-registry-service.kafka.svc.cluster.local:8081'
+
+
+CREATE TABLE IF NOT EXISTS cti.mt_account_balance_table
+(
+    Server String,
+    Currency String,
+    Group String,
+    Timestamp DateTime64(3),
+    Login UInt64,
+    TotalBalance Float64,
+    Credit Float64,
+    Margin Float64,
+    Leverage UInt16,
+    Equity Float64,
+    MarginFree Float64,
+    MarginLevel Float64,
+    Storage Float64,
+    Floating Float64,
+    Commission Float64
+) ENGINE = MergeTree ORDER BY (Login, Server, Timestamp);
